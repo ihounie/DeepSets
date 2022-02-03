@@ -171,7 +171,7 @@ if __name__ == '__main__':
     f2 = open(odir + 'stderr.txt', 'w')
     sys.stdout = f1
     sys.stderr = f2
-    print('Running Task {0} with L = 2^{1}'.format(task_id, exp_id))
+    print(('Running Task {0} with L = 2^{1}'.format(task_id, exp_id)))
     
     # Load dataset
     train = DataIterator(ddir+'data_{0}.mat'.format(exp_id), 128, shuffle=True)
@@ -184,16 +184,16 @@ if __name__ == '__main__':
     with h5py.File(ddir+'truth.mat') as f:
         t = np.squeeze(f['X_parameter'][()])
         y = np.squeeze(f['Y'][()])
-    print 'Loaded dataset'
+    print('Loaded dataset')
     
     nb_epoch = 500 # np.max([1024*1024/train.L,100])
-    print train.d
+    print((train.d))
     t = Trainer(train.d, (t,y), nb_epoch, odir, odir+'logs/')
     a, b = t.fit(train, valid)
     t.model = torch.load(odir + 'best_mse_model.pth')
     a, b = t.evaluate(test)
     print('Test set evaluation: ')
-    print('\t MAE: {0:0.6g} \t MSE: {1:0.6g}'.format(a, b))
+    print(('\t MAE: {0:0.6g} \t MSE: {1:0.6g}'.format(a, b)))
     
     f1.close()
     f2.close()

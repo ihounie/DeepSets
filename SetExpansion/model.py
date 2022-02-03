@@ -20,7 +20,7 @@ class Deepset(nn.Container):
         else: self.load(params);
 
         # transfer parameters to self
-        for key, val in self.params.items(): setattr(self, key, val);
+        for key, val in list(self.params.items()): setattr(self, key, val);
         # Criterion
         self.criterion = nn.MarginRankingLoss(self.margin);
         # Additional variables
@@ -34,7 +34,7 @@ class Deepset(nn.Container):
         flags = ['imgTransform', 'combine', 'embedder', 'postEmbedder'];
         # refine flags
         for flag in flags:
-            if flag not in modelParts: print('Missing: %s'%flag)
+            if flag not in modelParts: print(('Missing: %s'%flag))
             else: setattr(self, flag, modelParts[flag]);
 
         # define word transform as composition
@@ -85,7 +85,7 @@ class Deepset(nn.Container):
             imgEmbed = self.imgTransform(Variable(batch['image']));
             setEmbed = torch.cat((setEmbed, imgEmbed), 1);
 
-        # Interact positive and negative instances to get score
+        # Interact positive and negative instances to get scores
         posScore = self.scoreInstanceSet(posEmbed, setEmbed).view(-1);
         negScore = self.scoreInstanceSet(negEmbed, setEmbed).view(-1);
 
@@ -96,7 +96,7 @@ class Deepset(nn.Container):
         # Computes gradient for all the variables
         loss.backward();
 
-        return loss.data[0];
+        return loss.item();
 
     # Evaluate on a given set, also save top 10 words
     def evaluate(self, dataloader, dtype):
@@ -111,7 +111,7 @@ class Deepset(nn.Container):
         imageIds = [];
 
         # Get gt scores for all options
-        for startId in progressbar(range(0, numInst, self.batchSize)):
+        for startId in progressbar(list(range(0, numInst, self.batchSize))):
             # Obtain test batch, argument set and GT members
             batch = dataloader.getTestBatch(startId, dtype);
             batchSize = batch['set'].size(0);
@@ -144,7 +144,7 @@ class Deepset(nn.Container):
                 argEmbed = bottle(self.wordTransform, Variable(argInds));
                 argScore = self.scoreInstanceSet(argEmbed, setEmbed);
                 # save scores for this batch
-                batchScores[:, ii:end] = argScore.data.float();
+                batchScores[:, ii:end] = argScore.data.squeeze().float();
 
             # Assign the set least possible score (-Inf) to set elements
             rangeInds = torch.arange(0, batchSize).long();
@@ -176,7 +176,8 @@ class Deepset(nn.Container):
                                                 'imageId': imageIds};
 
     # Initialize word embeddings
-    def initEmbeddings(self, (embeds, inds)):
+    def initEmbeddings(self, xxx_todo_changeme):
+        (embeds, inds) = xxx_todo_changeme
         weight = self.embedder.weight.data;
         # Assign embeds
         for row in inds: weight[row] = torch.from_numpy(embeds[row]);
@@ -203,7 +204,7 @@ class Deepset(nn.Container):
 
         for flag in flags:
             if flag in content: setattr(self, flag, content[flag]);
-        print(self.postEmbedder)
+        print((self.postEmbedder))
         # initialize alias for wordTransform
         self.wordTransform = lambda x: self.postEmbedder(self.embedder(x));
 

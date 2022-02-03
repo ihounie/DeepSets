@@ -54,7 +54,7 @@ def readOptions():
                         help='true for GPU and false for CPU')
 
     try: parsed = vars(parser.parse_args());
-    except IOError, msg: parser.error(str(msg));
+    except IOError as msg: parser.error(str(msg));
 
     # Adjust model name to append current time
     time = strftime("-%d-%b-%Y-%X/", gmtime());
@@ -67,8 +67,8 @@ def readOptions():
     if parsed['embedPath'] == '': parsed['embedPath'] = None;
 
     # print and return
-    maxLen = max([len(ii) for ii in parsed.keys()]);
+    maxLen = max([len(ii) for ii in list(parsed.keys())]);
     fmtString = '\t%' + str(maxLen) + 's : %s';
     print('Arguments:')
-    for keyPair in parsed.iteritems(): print(fmtString % keyPair)
+    for keyPair in list(parsed.items()): print((fmtString % keyPair))
     return parsed;

@@ -19,6 +19,9 @@ INPUT_DATA=${ROOT}'lda/lda_top_words_split_allwords_3k.json'
 
 # lda
 MODEL='w2v_sum'
+#MODEL='w2v_GCN'
+#LR = 0.00001
+LR=0.00001
 MARGIN=0.1
 # training
-python -u train.py -inputData ${INPUT_DATA} -margin ${MARGIN} -modelName ${MODEL} -dataset lda -learningRate 0.0001 -evalSize 5 -evalPerEpoch 10 -numEpochs 10000 -embedSize 50
+python -u train.py -inputData ${INPUT_DATA} -margin ${MARGIN} -modelName ${MODEL} -dataset lda -learningRate $LR -evalSize 5 -evalPerEpoch 50 -numEpochs 100 -embedSize 50 -dropout 1

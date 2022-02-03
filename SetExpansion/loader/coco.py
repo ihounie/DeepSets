@@ -7,7 +7,7 @@ import pdb
 import math
 import numpy as np
 from tqdm import tqdm as progressbar
-from dataloader import AbstractLoader
+from .dataloader import AbstractLoader
 
 class Dataloader(AbstractLoader):
     # Initializer
@@ -20,25 +20,25 @@ class Dataloader(AbstractLoader):
         self.text = content['text'];
         self.image = content['image'];
         # Get the image feature size
-        self.featSize = content['image'].values()[0].size(1);
+        self.featSize = list(content['image'].values())[0].size(1);
 
         self.numImgs = {};
         for dtype in self.image:
             self.numImgs[dtype] = self.image[dtype].size(0);
 
         # Transfer params and options
-        for key, val in options.items(): setattr(self, key, val);
-        for key, val in content['params'].items(): setattr(self, key, val);
+        for key, val in list(options.items()): setattr(self, key, val);
+        for key, val in list(content['params'].items()): setattr(self, key, val);
 
         # vocab size
         self.vocabSize = len(self.word2ind);
         # feature size for image features
         self.featSize = self.image['train'].size(1);
-        print('Vocab Size: %d' % self.vocabSize)
+        print(('Vocab Size: %d' % self.vocabSize))
 
     def getTrainBatch(self):
         # Pick a set of random images
-        batchImgIds = sample(range(self.numImgs['train']), self.batchSize);
+        batchImgIds = sample(list(range(self.numImgs['train'])), self.batchSize);
 
         # compile batch
         batch = self.compileBatch(batchImgIds, 'train');
@@ -53,7 +53,7 @@ class Dataloader(AbstractLoader):
     def getTestBatch(self, startId, dtype):
         # Pick the range of images
         endId = min(self.numInst[dtype], startId + self.batchSize);
-        batchImgIds = range(startId, endId);
+        batchImgIds = list(range(startId, endId));
 
         # get the set length
         if self.setSize > 0: setLen = self.setSize;
@@ -133,7 +133,7 @@ class Dataloader(AbstractLoader):
 
             # given instance its own set + pos instance
             if len(datum) < setLen:
-                for ii in xrange(len(datum)):
+                for ii in range(len(datum)):
                     posInst[count] = datum[ii];
                     #if setLen > 0:
                         #setSample = np.random.choice(datum, setLen);
@@ -143,7 +143,7 @@ class Dataloader(AbstractLoader):
                     count += 1;
 
             else:
-                for ii in xrange(setLen, len(datum)):
+                for ii in range(setLen, len(datum)):
                     posInst[count] = datum[ii];
                     if setLen > 0:
                         setInst[count, :] = torch.LongTensor(datum[:setLen]);

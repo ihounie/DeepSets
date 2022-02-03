@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import pdb
 from miscModules import *
+from gnns import GAtt, GCN
 
 def selectModel(params):
     embedder, postEmbedder, imgTransform, combine = None, None, None, None;
@@ -24,6 +25,18 @@ def selectModel(params):
                     nn.Linear(params['hiddenSize'], 1),
                     nn.Tanh(),
                     );
+
+    ###########################################################################
+    elif params['modelName'] == 'w2v_GAT2':
+        combine = nn.Sequential(
+                    SplitSum(params['embedSize']),
+                    GAtt(params['embedSize'],params['hiddenSize'], dropout=params['dropout']));
+
+###########################################################################
+    elif params['modelName'] == 'w2v_GCN':
+        combine = nn.Sequential(
+                    SplitSum(params['embedSize']),
+                    GCN(params['embedSize'], dropout=params['dropout']));
 
     ###########################################################################
     elif params['modelName'] == 'w2v_only':
@@ -93,9 +106,9 @@ def selectModel(params):
                     SplitSum(params['hiddenSize']),
                     nn.Linear(params['hiddenSize'], params['hiddenSize']),
                     nn.Tanh(),
-                    nn.Linear(params['hiddenSize'], params['hiddenSize']/2),
+                    nn.Linear(params['hiddenSize'], int(params['hiddenSize']/2)),
                     nn.Tanh(),
-                    nn.Linear(params['hiddenSize']/2, 1),
+                    nn.Linear(int(params['hiddenSize']/2), 1),
                     );
     ###########################################################################
     elif params['modelName'] == 'w2v_concat':

@@ -11,6 +11,7 @@ from time import gmtime, strftime
 from utilities import composeEmbeddings, evaluateTagging
 import pdb
 import pickle
+from tqdm import tqdm
 import numpy as np
 
 #####################################################################
@@ -43,14 +44,14 @@ if hasattr(dl, 'featSize'): modelParams['featSize'] = dl.featSize;
 model = Deepset(modelParams);
 # Check for initializations
 if modelParams['embedPath'] != None:
-    print('Loading word embeddings: %s' % modelParams['embedPath'])
+    print(('Loading word embeddings: %s' % modelParams['embedPath']))
     model.initEmbeddings(composeEmbeddings(dl));
 print('\nArchitecture:')
 printArgs = ['embedder', 'postEmbedder', 'combine', 'imgTransform', 'pooler'];
 for arg in printArgs:
     if hasattr(model, arg):
-        print('%s: ' % arg)
-        print(getattr(model, arg))
+        print(('%s: ' % arg))
+        print((getattr(model, arg)))
 
 # Ship to gpu if needed
 if options['useGPU']: model = model.cuda();
@@ -81,20 +82,21 @@ optimizer = optim.Adam(optimArgs);
 #####################################################################
 # Training
 options['iterPerEpoch'] = dl.numInst['train']/options['batchSize'];
-print('Number of iterations per epoch: %d' % options['iterPerEpoch'])
+print(('Number of iterations per epoch: %d' % options['iterPerEpoch']))
 loss = None;
 #bestMRR = model.evaluate(dl, 'val')[0]['mrr'];
 bestMRR = 0;
 
 print('\nTraining:')
-for loopId in xrange(1, options['iterPerEpoch'] * options['numEpochs']):
+pbar = tqdm(list(range(1, int(options['iterPerEpoch'] * options['numEpochs']))))
+for loopId in pbar:
     # Reset gradients, perform training step, update
     optimizer.zero_grad();
     curLoss = model.trainStep(dl);
     optimizer.step();
-
+    pbar.set_description(f"Loss {curLoss:.4f}");
     # Evaluate for every 10 epochs
-    if loopId % (options['evalPerEpoch'] * options['iterPerEpoch']) == 0:
+    if loopId % (options['evalPerEpoch'] * options['iterPerEpoch']) == 0:    
         metrics, scores, gtLabels = model.evaluate(dl, 'val');
         evaluateTagging(scores, gtLabels['gtLabels']);
         curMRR = metrics['mrr'];
@@ -113,6 +115,6 @@ for loopId in xrange(1, options['iterPerEpoch'] * options['numEpochs']):
     if loopId % 100 == 0:
         epoch = float(loopId) / options['iterPerEpoch'];
         time = strftime("%a, %d %b %Y %X", gmtime())
-        print('[%s][Iter: %d][Ep: %.2f] Loss: %.4f' % \
-                    (time, loopId, epoch, loss))
+        print(('[%s][Iter: %d][Ep: %.2f] Loss: %.4f' % \
+                    (time, loopId, epoch, loss)))
 #####################################################################

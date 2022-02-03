@@ -28,7 +28,7 @@ class PointCloudTrainer(object):
         self.D = classifier.DTanh(network_dim, pool='max1').cuda()
         self.L = nn.CrossEntropyLoss().cuda()
         self.optimizer = optim.Adam([{'params':self.D.parameters()}], lr=1e-3, weight_decay=1e-7, eps=1e-3)
-        self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=list(range(400,num_epochs,400)), gamma=0.1)
+        self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=list(range(5,num_epochs,400)), gamma=0.1)
         #self.optimizer = optim.Adamax([{'params':self.D.parameters()}], lr=5e-4, weight_decay=1e-7, eps=1e-3) # optionally use this for 5000 points case, but adam with scheduler also works
 
     def train(self):
@@ -69,21 +69,21 @@ class PointCloudTrainer(object):
             sum_acc += (f_X.max(dim=1)[1] == Y).float().sum().data.cpu().numpy()[0]
             del X,Y,f_X
         test_acc = sum_acc/counts
-        print('Final Test Accuracy: {0:0.3f}'.format(test_acc))
+        print(('Final Test Accuracy: {0:0.3f}'.format(test_acc)))
         return test_acc
 
 if __name__ == "__main__":
     test_accs = []
     for i in range(num_repeats):
-        print('='*30 + ' Start Run {0}/{1} '.format(i+1, num_repeats) + '='*30)
+        print(('='*30 + ' Start Run {0}/{1} '.format(i+1, num_repeats) + '='*30))
         t = PointCloudTrainer()
         t.train()
         acc = t.test()
         test_accs.append(acc)
-        print('='*30 + ' Finish Run {0}/{1} '.format(i+1, num_repeats) + '='*30)
+        print(('='*30 + ' Finish Run {0}/{1} '.format(i+1, num_repeats) + '='*30))
     print('\n')
     if num_repeats > 2:
         try:
-            print('Test accuracy: {0:0.2f} '.format(np.mean(test_accs)) + unichr(177).encode('utf-8') + ' {0:0.3f} '.format(np.std(test_accs)))
+            print(('Test accuracy: {0:0.2f} '.format(np.mean(test_accs)) + chr(177).encode('utf-8') + ' {0:0.3f} '.format(np.std(test_accs))))
         except:
-            print('Test accuracy: {0:0.2f} +/-  {0:0.3f} '.format(np.mean(test_accs), np.std(test_accs)))
+            print(('Test accuracy: {0:0.2f} +/-  {0:0.3f} '.format(np.mean(test_accs), np.std(test_accs))))

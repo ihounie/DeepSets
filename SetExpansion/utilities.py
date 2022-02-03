@@ -6,8 +6,9 @@ import pdb
 import math
 import sys
 sys.path.append('scripts/');
-from html import HTML
+#from html import HTML
 import gensim
+from gnns import GAtt, GCN
 
 # Handles 2D and 3D, reduces one dimension
 def bottle(module, inputData):
@@ -43,7 +44,7 @@ def computeRankStats(ranks, verbose=True):
         order = ['r10', 'r100', 'r1000', 'median', 'mean', 'mrr'];
         print('\n')
         for key in order:
-            try: print('\t%s: %f' % (key, stats[key]))
+            try: print(('\t%s: %f' % (key, stats[key])))
             except: pdb.set_trace();
 
     return stats;
@@ -61,7 +62,7 @@ def composeEmbeddings(dl):
     # Copy the embeds
     embeds = np.zeros((dl.vocabSize, dl.embedSize));
     inds = [];
-    for word, ind in dl.word2ind.iteritems():
+    for word, ind in list(dl.word2ind.items()):
         # note which words has word2vec embeddings
         if word in model:
             embeds[ind] = model[word];
@@ -84,23 +85,26 @@ def initializeWeights(moduleList, itype):
     assert itype=='xavier', 'Only Xavier initialization supported';
 
     for moduleId, module in enumerate(moduleList):
-        if hasattr(module, '_modules') and len(module._modules) > 0:
-            # Iterate again
-            initializeWeights(module, itype);
+        if isinstance(module, GAtt) or isinstance(module, GCN):
+            pass
         else:
-            # Initialize weights
-            name = type(module).__name__;
-            # If linear or embedding
-            if name == 'Embedding' or name == 'Linear':
-                fanIn = module.weight.data.size(0);
-                fanOut = module.weight.data.size(1);
+            if hasattr(module, '_modules') and len(module._modules) > 0:
+                # Iterate again
+                initializeWeights(module, itype);
+            else:
+                # Initialize weights
+                name = type(module).__name__;
+                # If linear or embedding
+                if name == 'Embedding' or name == 'Linear':
+                    fanIn = module.weight.data.size(0);
+                    fanOut = module.weight.data.size(1);
 
-                factor = math.sqrt(2.0/(fanIn + fanOut));
-                weight = torch.randn(fanIn, fanOut) * factor;
-                module.weight.data.copy_(weight);
+                    factor = math.sqrt(2.0/(fanIn + fanOut));
+                    weight = torch.randn(fanIn, fanOut) * factor;
+                    module.weight.data.copy_(weight);
 
-            # Check for bias and reset
-            if hasattr(module, 'bias'): module.bias.data.fill_(0.0);
+                # Check for bias and reset
+                if hasattr(module, 'bias'): module.bias.data.fill_(0.0);
 
 # Save top words
 def saveTopWords(result, dataloader, dtype, topN = 10):
@@ -112,40 +116,40 @@ def saveTopWords(result, dataloader, dtype, topN = 10):
     page.setTitle(['Set', 'Ground Truth', 'Top Words']);
 
     numInst = dataloader.numInst[dtype];
-    for ii in xrange(numInst):
+    for ii in range(numInst):
         rowContent = []; # row
 
         data = dataloader.getIndexInstance(ii, dtype);
         # set
         setData = data[:dataloader.evalSize];
         setWords = [dataloader.ind2word[str(setData[jj])] \
-                        for jj in xrange(setData.size(0))];
+                        for jj in range(setData.size(0))];
         rowContent.append('\n'.join(setWords));
 
         # gt words, scores, ranks
         gtData = data[dataloader.evalSize:];
         gtWords = [dataloader.ind2word[str(gtData[jj])] \
-                        for jj in xrange(gtData.size(0))];
+                        for jj in range(gtData.size(0))];
         gtInfo = ['%s \t(%f)\t[%d]' \
                     % (gtWords[jj], scores[ii, gtData[jj]], gtRanks[ii, jj])\
-                    for jj in xrange(gtData.size(0))];
+                    for jj in range(gtData.size(0))];
         rowContent.append('\n'.join(gtInfo));
 
         # topN words, scores, ranks
         argScores = scores[ii].numpy();
         topData = argScores.argsort()[-topN:][::-1];
         topWords = [dataloader.ind2word[str(topData[jj])] \
-                        for jj in xrange(topData.shape[0])];
+                        for jj in range(topData.shape[0])];
         topInfo = ['%s \t(%f)\t[%d]' \
                     % (topWords[jj], scores[ii, topData[jj]], jj)\
-                    for jj in xrange(topData.shape[0])];
+                    for jj in range(topData.shape[0])];
         rowContent.append('\n'.join(topInfo));
 
         page.addRow(rowContent);
 
     # render page and save
     page.savePage(dataloader.resultPath);
-
+'''
 # Visualizing the batch
 # given a batch, collect image ids, words and display
 def visualizeBatch(dataloader):
@@ -162,7 +166,7 @@ def visualizeBatch(dataloader):
     imgSum = batch['image'].sum(1).numpy();
     curSum = imgSum[0];
     count = 0;
-    for ii in xrange(imgSum.shape[0]):
+    for ii in range(imgSum.shape[0]):
         if curSum != imgSum[ii]: count += 1;
         curSum = imgSum[ii];
 
@@ -180,7 +184,7 @@ def visualizeBatch(dataloader):
 
     # render page
     page.savePage('visualize_batch.html');
-
+'''
 # evaluation for tagging - per tag evaluation
 # adapted: fast tag code
 def evaluateTagging(scores, gtLabels, topAnswers=5, verbose=True):
@@ -198,7 +202,7 @@ def evaluateTagging(scores, gtLabels, topAnswers=5, verbose=True):
             gtMat[ii, word] = 1;
 
         # prediction matrix
-        for jj in xrange(topAnswers):
+        for jj in range(topAnswers):
             predMat[ii, predTags[ii, jj]] = 1;
 
     # precision
@@ -226,10 +230,10 @@ def evaluateTagging(scores, gtLabels, topAnswers=5, verbose=True):
 
     # pretty print output
     if verbose:
-        print('\n\tPrecision: %f' % meanPrecision)
-        print('\tRecall: %f' % meanRecall)
-        print('\tF1 Score: %f' % f1score)
-        print('\tN+: %f\n' % recallPositive)
+        print(('\n\tPrecision: %f' % meanPrecision))
+        print(('\tRecall: %f' % meanRecall))
+        print(('\tF1 Score: %f' % f1score))
+        print(('\tN+: %f\n' % recallPositive))
 
     metrics = {};
     metrics['precision'] = meanPrecision;
@@ -239,6 +243,7 @@ def evaluateTagging(scores, gtLabels, topAnswers=5, verbose=True):
 
     return metrics;
 
+'''
 # Save the predicted tags along with gt
 def savePredictedTags(scores, groundTruth, dataloader, topN=20):
     # local aliases
@@ -250,7 +255,7 @@ def savePredictedTags(scores, groundTruth, dataloader, topN=20):
     imgPath = 'val2014/COCO_val2014_%012d.jpg';
     numImgs = 100;
 
-    for ii in xrange(numImgs):
+    for ii in range(numImgs):
         rowContent = [page.linkImage(imgPath % imgIds[ii])];
         #data = dataloader.getIndexInstance(ii, 'test');
         # set
@@ -274,3 +279,4 @@ def savePredictedTags(scores, groundTruth, dataloader, topN=20):
 
     # render page and save
     page.savePage('img_tags_espgame.html');
+'''

@@ -8,7 +8,7 @@ import math
 import numpy as np
 from tqdm import tqdm as progressbar
 #import matplotlib.pyplot as plt
-from dataloader import AbstractLoader
+from .dataloader import AbstractLoader
 
 # Preloader for LDA
 class Dataloader(AbstractLoader):
@@ -20,16 +20,16 @@ class Dataloader(AbstractLoader):
 
         # Convert to torch tensor
         self.data = {};
-        for dtype, blob in content['data'].iteritems():
+        for dtype, blob in list(content['data'].items()):
             self.data[dtype] = torch.LongTensor(blob);
 
         # Transfer params and options
-        for key, val in options.items(): setattr(self, key, val);
-        for key, val in content['params'].items(): setattr(self, key, val);
+        for key, val in list(options.items()): setattr(self, key, val);
+        for key, val in list(content['params'].items()): setattr(self, key, val);
 
         # vocab size
         self.vocabSize = len(self.word2ind);
-        print('Vocab Size: %d' % self.vocabSize)
+        print(('Vocab Size: %d' % self.vocabSize))
 
     def getTrainBatch(self):
         inds = torch.LongTensor(self.batchSize).random_(self.numInst['train']-1);
@@ -40,9 +40,9 @@ class Dataloader(AbstractLoader):
 
         numRows = batch.size(0);
         numCols = batch.size(1);
-        for row in xrange(numRows):
+        for row in range(numRows):
             shuffle = torch.randperm(numCols);
-            for col in xrange(numCols):
+            for col in range(numCols):
                 batch[row, col] = batch[row, shuffle[col]];
         # Separate set and ground truth
         setInst = batch[:, :randLen];
